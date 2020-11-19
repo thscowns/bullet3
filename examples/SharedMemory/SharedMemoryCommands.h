@@ -132,12 +132,16 @@ struct b3CustomCommand
 	b3PluginArguments m_arguments;
 	char m_pluginPath[MAX_FILENAME_LENGTH];
 	char m_postFix[MAX_FILENAME_LENGTH];
+	int m_startingReturnBytes;
 };
 
 struct b3CustomCommandResultArgs
 {
 	int m_pluginUniqueId;
 	int m_executeCommandResult;
+	int m_returnDataType;
+	int m_returnDataSizeInBytes;
+	int m_returnDataStart;
 };
 
 struct BulletDataStreamArgs
@@ -169,6 +173,7 @@ enum EnumChangeDynamicsInfoFlags
 	CHANGE_DYNAMICS_INFO_SET_COLLISION_MARGIN = 1 << 17,
 	CHANGE_DYNAMICS_INFO_SET_JOINT_LIMITS = 1 << 18,
 	CHANGE_DYNAMICS_INFO_SET_JOINT_LIMIT_MAX_FORCE = 1 << 19,
+	CHANGE_DYNAMICS_INFO_SET_DYNAMIC_TYPE = 1 << 20,
 };
 
 struct ChangeDynamicsInfoArgs
@@ -198,6 +203,8 @@ struct ChangeDynamicsInfoArgs
 	double m_jointLowerLimit;
 	double m_jointUpperLimit;
 	double m_jointLimitForce;
+	
+	int m_dynamicType;
 };
 
 struct GetDynamicsInfoArgs
@@ -367,7 +374,10 @@ enum EnumUpdateVisualShapeData
 	CMD_UPDATE_VISUAL_SHAPE_TEXTURE = 1,
 	CMD_UPDATE_VISUAL_SHAPE_RGBA_COLOR = 2,
 	CMD_UPDATE_VISUAL_SHAPE_SPECULAR_COLOR = 4,
+	CMD_UPDATE_VISUAL_SHAPE_FLAGS = 8,
 };
+
+
 
 struct UpdateVisualShapeDataArgs
 {
@@ -377,6 +387,7 @@ struct UpdateVisualShapeDataArgs
 	int m_textureUniqueId;
 	double m_rgbaColor[4];
 	double m_specularColor[3];
+	int m_flags;
 };
 
 struct LoadTextureArgs
@@ -943,6 +954,7 @@ enum InternalOpenGLVisualizerUpdateFlags
 	COV_SET_SHADOWMAP_RESOLUTION = 8,
 	COV_SET_SHADOWMAP_WORLD_SIZE = 16,
 	COV_SET_REMOTE_SYNC_TRANSFORM_INTERVAL = 32,
+	COV_SET_SHADOWMAP_INTENSITY = 64,
 };
 
 struct ConfigureOpenGLVisualizerRequest
@@ -957,6 +969,7 @@ struct ConfigureOpenGLVisualizerRequest
 	double m_remoteSyncTransformInterval;
 	int m_setFlag;
 	int m_setEnabled;
+	double m_shadowMapIntensity;
 };
 
 enum
@@ -1115,6 +1128,7 @@ struct b3RequestMeshDataArgs
 	int m_linkIndex;
 	int m_startingVertex;
 	int m_collisionShapeIndex;
+	int m_flags;
 };
 
 struct b3SendMeshDataArgs
