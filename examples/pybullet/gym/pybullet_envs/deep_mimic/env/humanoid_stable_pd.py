@@ -581,24 +581,42 @@ class HumanoidStablePD(object):
   def buildHeadingTrans(self, rootOrn):
     #align root transform 'forward' with world-space x axis
     eul = self._pybullet_client.getEulerFromQuaternion(rootOrn)
+    print("eul=", eul)
     refDir = [1, 0, 0]
     rotVec = self._pybullet_client.rotateVector(rootOrn, refDir)
+    print("rotVec=", rotVec)
     heading = math.atan2(-rotVec[2], rotVec[0])
+    print("heading=", heading)
     heading2 = eul[1]
     #print("heading=",heading)
     headingOrn = self._pybullet_client.getQuaternionFromAxisAngle([0, 1, 0], -heading)
     return headingOrn
 
+  def buildProjectedTrans(self):
+      rootPos, rootOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
+      rotMat = self._pybullet_client.getMatrixFromQuaternion(rootOrn)
+      print("rotMat=", rotMat)
+      headingOrn = self.buildHeadingTrans(rootOrn)
+      invRootPos = [-rootPos[0], -rootPos[1], -rootPos[2]]
+      invOrigTransPos, invOrigTransOrn = self._pybullet_client.multiplyTransforms([0, 0, 0],
+                                                                                  headingOrn,
+                                                                                  invRootPos,
+                                                                                  [0, 0, 0, 1])
+
+      return invOrigTransPos, invOrigTransOrn
+
+
   def buildOriginTrans(self):
     rootPos, rootOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
 
-    #print("rootPos=",rootPos, " rootOrn=",rootOrn)
+    print("rootPos=",rootPos, " rootOrn=",rootOrn)
     invRootPos = [-rootPos[0], 0, -rootPos[2]]
     #invOrigTransPos, invOrigTransOrn = self._pybullet_client.invertTransform(rootPos,rootOrn)
     headingOrn = self.buildHeadingTrans(rootOrn)
-    #print("headingOrn=",headingOrn)
+    # headingOrn = self.buildProjectedTrans(rootOrn)
+    print("headingOrn=",headingOrn)
     headingMat = self._pybullet_client.getMatrixFromQuaternion(headingOrn)
-    #print("headingMat=",headingMat)
+    print("headingMat=",headingMat)
     #dummy, rootOrnWithoutHeading = self._pybullet_client.multiplyTransforms([0,0,0],headingOrn, [0,0,0], rootOrn)
     #dummy, invOrigTransOrn = self._pybullet_client.multiplyTransforms([0,0,0],rootOrnWithoutHeading, invOrigTransPos, invOrigTransOrn)
 
@@ -613,7 +631,7 @@ class HumanoidStablePD(object):
     return invOrigTransPos, invOrigTransOrn
 
   def getState(self):
-
+    # print("d")
     stateVector = []
     phase = self.getPhase()
     #print("phase=",phase)
@@ -621,11 +639,14 @@ class HumanoidStablePD(object):
 
     rootTransPos, rootTransOrn = self.buildOriginTrans()
     basePos, baseOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
-
+    newTransPos, newTransOrn = self.buildProjectedTrans()
+    rootTransPos = newTransPos
+    rootTransOrn = newTransOrn
     rootPosRel, dummy = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                  basePos, [0, 0, 0, 1])
     #print("!!!rootPosRel =",rootPosRel )
-    #print("rootTransPos=",rootTransPos)
+    print("rootTransPos=", rootTransPos)
+    print("rootTransOrn=", rootTransOrn)
     #print("basePos=",basePos)
     localPos, localOrn = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                   basePos, baseOrn)

@@ -36,3 +36,4 @@ CTestTestFile.cmake
 
 # vim temp files
 *.swp
+.idea/
