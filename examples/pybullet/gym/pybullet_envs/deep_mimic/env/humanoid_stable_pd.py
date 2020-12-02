@@ -20,7 +20,7 @@ jointFrictionForce = 0
 
 class HumanoidStablePD(object):
 
-  def __init__( self, pybullet_client, mocap_data, timeStep, 
+  def __init__( self, pybullet_client, mocap_data, timeStep,
                 useFixedBase=True, arg_parser=None, useComReward=False):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
@@ -38,12 +38,23 @@ class HumanoidStablePD(object):
     #  self._pybullet_client.setCollisionFilterGroupMask(self._sim_model,j,collisionFilterGroup=0,collisionFilterMask=0)
 
     self._end_effectors = [5, 8, 11, 14]  #ankle and wrist, both left and right
-
+    test = False
+    self.test_cube = None
+    self.org_cube = None
+    self.projectedFrame = True
+    if test:
+        self.test_cube = [self._pybullet_client.loadURDF("cube_small.urdf") for i in range(15)]
+        self.org_cube = [self._pybullet_client.loadURDF("cube_small.urdf") for i in range(15)]
     self._kin_model = self._pybullet_client.loadURDF(
         "humanoid/humanoid.urdf", [0, 0.85, 0],
         globalScaling=0.25,
         useFixedBase=True,
         flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER)
+    '''self._kin_model2 = self._pybullet_client.loadURDF(
+        "humanoid/humanoid.urdf", [0, 0.85, 0],
+        globalScaling=0.25,
+        useFixedBase=True,
+        flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER)'''
 
     self._pybullet_client.changeDynamics(self._sim_model, -1, lateralFriction=0.9)
     for j in range(self._pybullet_client.getNumJoints(self._sim_model)):
@@ -51,20 +62,36 @@ class HumanoidStablePD(object):
 
     self._pybullet_client.changeDynamics(self._sim_model, -1, linearDamping=0, angularDamping=0)
     self._pybullet_client.changeDynamics(self._kin_model, -1, linearDamping=0, angularDamping=0)
+    # self._pybullet_client.changeDynamics(self._kin_model2, -1, linearDamping=0, angularDamping=0)
 
     #todo: add feature to disable simulation for a particular object. Until then, disable all collisions
     self._pybullet_client.setCollisionFilterGroupMask(self._kin_model,
                                                       -1,
                                                       collisionFilterGroup=0,
                                                       collisionFilterMask=0)
+    '''self._pybullet_client.setCollisionFilterGroupMask(self._kin_model2,
+                                                      -1,
+                                                      collisionFilterGroup=0,
+                                                      collisionFilterMask=0)'''
     self._pybullet_client.changeDynamics(
         self._kin_model,
         -1,
         activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
         self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
         self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
+    '''self._pybullet_client.changeDynamics(
+        self._kin_model2,
+        -1,
+        activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
+                        self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
+                        self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)'''
     alpha = 0.4
     self._pybullet_client.changeVisualShape(self._kin_model, -1, rgbaColor=[1, 1, 1, alpha])
+    if self.org_cube and self.test_cube:
+        for i in range(15):
+            self._pybullet_client.changeVisualShape(self.org_cube[i], -1, rgbaColor=[1, 1, 1, 1])
+            self._pybullet_client.changeVisualShape(self.test_cube[i], -1, rgbaColor=[0, 0, 0, alpha])
+        # self._pybullet_client.changeVisualShape(self._kin_model2, -1, rgbaColor=[0, 0, 0, alpha])
     for j in range(self._pybullet_client.getNumJoints(self._kin_model)):
       self._pybullet_client.setCollisionFilterGroupMask(self._kin_model,
                                                         j,
@@ -77,6 +104,18 @@ class HumanoidStablePD(object):
           self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
           self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
       self._pybullet_client.changeVisualShape(self._kin_model, j, rgbaColor=[1, 1, 1, alpha])
+    '''for j in range(self._pybullet_client.getNumJoints(self._kin_model2)):
+      self._pybullet_client.setCollisionFilterGroupMask(self._kin_model2,
+                                                        j,
+                                                        collisionFilterGroup=0,
+                                                        collisionFilterMask=0)
+      self._pybullet_client.changeDynamics(
+          self._kin_model2,
+          j,
+          activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
+          self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
+          self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
+      self._pybullet_client.changeVisualShape(self._kin_model2, j, rgbaColor=[0, 0, 0, alpha])'''
 
     self._poseInterpolator = humanoid_pose_interpolator.HumanoidPoseInterpolator()
 
@@ -134,6 +173,22 @@ class HumanoidStablePD(object):
           positionGain=0,
           velocityGain=1,
           force=[jointFrictionForce, jointFrictionForce, 0])
+      '''self._pybullet_client.setJointMotorControl2(self._kin_model2,
+                                                  j,
+                                                  self._pybullet_client.POSITION_CONTROL,
+                                                  targetPosition=0,
+                                                  positionGain=0,
+                                                  targetVelocity=0,
+                                                  force=0)
+      self._pybullet_client.setJointMotorControlMultiDof(
+          self._kin_model2,
+          j,
+          self._pybullet_client.POSITION_CONTROL,
+          targetPosition=[0, 0, 0, 1],
+          targetVelocity=[0, 0, 0],
+          positionGain=0,
+          velocityGain=1,
+          force=[jointFrictionForce, jointFrictionForce, 0])'''
 
     self._jointDofCounts = [4, 4, 4, 1, 4, 4, 1, 4, 1, 4, 4, 1]
 
@@ -158,9 +213,10 @@ class HumanoidStablePD(object):
     pose = self.computePose(self._frameFraction)
     self.initializePose(self._poseInterpolator, self._sim_model, initBase=True)
     self.initializePose(self._poseInterpolator, self._kin_model, initBase=False)
+    # self.initializePose(self._poseInterpolator, self._kin_model2, initBase=False)
 
   def initializePose(self, pose, phys_model, initBase, initializeVelocity=True):
-    
+
     useArray = True
     if initializeVelocity:
       if initBase:
@@ -174,7 +230,7 @@ class HumanoidStablePD(object):
         jointPositions = [pose._chestRot, pose._neckRot, pose._rightHipRot, pose._rightKneeRot,
                           pose._rightAnkleRot, pose._rightShoulderRot, pose._rightElbowRot, pose._leftHipRot,
                           pose._leftKneeRot, pose._leftAnkleRot, pose._leftShoulderRot, pose._leftElbowRot]
-        
+
         jointVelocities = [pose._chestVel, pose._neckVel, pose._rightHipVel, pose._rightKneeVel,
                           pose._rightAnkleVel, pose._rightShoulderVel, pose._rightElbowVel, pose._leftHipVel,
                           pose._leftKneeVel, pose._leftAnkleVel, pose._leftShoulderVel, pose._leftElbowVel]
@@ -205,7 +261,7 @@ class HumanoidStablePD(object):
         self._pybullet_client.resetJointStateMultiDof(phys_model, leftElbow, pose._leftElbowRot,
                                                       pose._leftElbowVel)
     else:
-      
+
       if initBase:
         self._pybullet_client.resetBasePositionAndOrientation(phys_model, pose._basePos,
                                                               pose._baseOrn)
@@ -217,7 +273,7 @@ class HumanoidStablePD(object):
                           pose._rightAnkleRot, pose._rightShoulderRot, pose._rightElbowRot, pose._leftHipRot,
                           pose._leftKneeRot, pose._leftAnkleRot, pose._leftShoulderRot, pose._leftElbowRot]
         self._pybullet_client.resetJointStatesMultiDof(phys_model, indices,jointPositions)
-        
+
       else:
         self._pybullet_client.resetJointStateMultiDof(phys_model, chest, pose._chestRot, [0, 0, 0])
         self._pybullet_client.resetJointStateMultiDof(phys_model, neck, pose._neckRot, [0, 0, 0])
@@ -318,7 +374,7 @@ class HumanoidStablePD(object):
     targetVelocities=[]
     kps = []
     kds = []
-    
+
     for index in range(len(self._jointIndicesAll)):
       jointIndex = self._jointIndicesAll[index]
       indices.append(jointIndex)
@@ -345,9 +401,9 @@ class HumanoidStablePD(object):
       targetPositions.append(targetPosition)
       targetVelocities.append(targetVelocity)
       dofIndex += self._jointDofCounts[index]
-      
-    #static char* kwlist[] = { "bodyUniqueId", 
-    #"jointIndices", 
+
+    #static char* kwlist[] = { "bodyUniqueId",
+    #"jointIndices",
     #"controlMode", "targetPositions", "targetVelocities", "forces", "positionGains", "velocityGains", "maxVelocities", "physicsClientId", NULL };
     self._pybullet_client.setJointMotorControlMultiDofArray(self._sim_model,
                                                            indices,
@@ -381,7 +437,7 @@ class HumanoidStablePD(object):
     useArray = True
     indices = []
     forces = []
-    
+
     if (useArray):
       for index in range(len(self._jointIndicesAll)):
         jointIndex = self._jointIndicesAll[index]
@@ -581,12 +637,12 @@ class HumanoidStablePD(object):
   def buildHeadingTrans(self, rootOrn):
     #align root transform 'forward' with world-space x axis
     eul = self._pybullet_client.getEulerFromQuaternion(rootOrn)
-    print("eul=", eul)
+    # print("eul=", eul)
     refDir = [1, 0, 0]
     rotVec = self._pybullet_client.rotateVector(rootOrn, refDir)
-    print("rotVec=", rotVec)
+    # print("rotVec=", rotVec)
     heading = math.atan2(-rotVec[2], rotVec[0])
-    print("heading=", heading)
+    # print("heading=", heading)
     heading2 = eul[1]
     #print("heading=",heading)
     headingOrn = self._pybullet_client.getQuaternionFromAxisAngle([0, 1, 0], -heading)
@@ -595,28 +651,50 @@ class HumanoidStablePD(object):
   def buildProjectedTrans(self):
       rootPos, rootOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
       rotMat = self._pybullet_client.getMatrixFromQuaternion(rootOrn)
-      print("rotMat=", rotMat)
+      # print("rootOrn=", rootOrn)
+      # print("rotMat=", rotMat)
+      r = np.identity(3)
+      r[0, :] = np.array(rotMat[:3])
+      r[1, :] = np.array(rotMat[3:6])
+      r[2, :] = np.array(rotMat[6:9])
+      q = matrixToQuarternion(r)
+      # print("matrixtoQuarternion=", q)
+      newX = np.array([rotMat[0], 0, rotMat[6]])
+      a = np.sqrt(np.sum(newX * newX))
+      newX = newX / a
+      newY = np.array([0, 1, 0])
+      newZ = np.cross(newX, newY)
+      projMatrix = np.identity(3)
+      projMatrix[:, 0] = newX
+      projMatrix[:, 1] = newY
+      projMatrix[:, 2] = newZ
+      # print("newX=", newX)
+      # print("projMat=", projMatrix)
+      projOrn = matrixToQuarternion(projMatrix)
       headingOrn = self.buildHeadingTrans(rootOrn)
-      invRootPos = [-rootPos[0], -rootPos[1], -rootPos[2]]
+      # print("projOrn, headingOrn=", projOrn, headingOrn)
+      # projMatrix2 = self._pybullet_client.getMatrixFromQuaternion(projOrn)
+      # print("projMatrix2=", projMatrix2)
+      invRootPos = [-rootPos[0], 0, -rootPos[2]]
       invOrigTransPos, invOrigTransOrn = self._pybullet_client.multiplyTransforms([0, 0, 0],
-                                                                                  headingOrn,
+                                                                                  projOrn,
                                                                                   invRootPos,
                                                                                   [0, 0, 0, 1])
 
-      return invOrigTransPos, invOrigTransOrn
+      return invOrigTransPos, invOrigTransOrn, projMatrix
 
 
   def buildOriginTrans(self):
     rootPos, rootOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
 
-    print("rootPos=",rootPos, " rootOrn=",rootOrn)
-    invRootPos = [-rootPos[0], 0, -rootPos[2]]
+    # print("rootPos=",rootPos, " rootOrn=",rootOrn)
+    invRootPos = [-rootPos[0], -rootPos[1], -rootPos[2]]
     #invOrigTransPos, invOrigTransOrn = self._pybullet_client.invertTransform(rootPos,rootOrn)
     headingOrn = self.buildHeadingTrans(rootOrn)
     # headingOrn = self.buildProjectedTrans(rootOrn)
-    print("headingOrn=",headingOrn)
+    # print("headingOrn=",headingOrn)
     headingMat = self._pybullet_client.getMatrixFromQuaternion(headingOrn)
-    print("headingMat=",headingMat)
+    # print("headingMat=",headingMat)
     #dummy, rootOrnWithoutHeading = self._pybullet_client.multiplyTransforms([0,0,0],headingOrn, [0,0,0], rootOrn)
     #dummy, invOrigTransOrn = self._pybullet_client.multiplyTransforms([0,0,0],rootOrnWithoutHeading, invOrigTransPos, invOrigTransOrn)
 
@@ -628,7 +706,9 @@ class HumanoidStablePD(object):
     #print("invOrigTransOrn=",invOrigTransOrn)
     invOrigTransMat = self._pybullet_client.getMatrixFromQuaternion(invOrigTransOrn)
     #print("invOrigTransMat =",invOrigTransMat )
-    return invOrigTransPos, invOrigTransOrn
+    return invOrigTransPos, invOrigTransOrn, headingMat
+
+  # def setPositionAndVelocity(self, model, ):
 
   def getState(self):
     # print("d")
@@ -637,17 +717,36 @@ class HumanoidStablePD(object):
     #print("phase=",phase)
     stateVector.append(phase)
 
-    rootTransPos, rootTransOrn = self.buildOriginTrans()
+    rootTransPos, rootTransOrn, headingMat = self.buildOriginTrans()
     basePos, baseOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
-    newTransPos, newTransOrn = self.buildProjectedTrans()
-    rootTransPos = newTransPos
-    rootTransOrn = newTransOrn
+    # print("basePos", basePos)
+    newTransPos, newTransOrn, projMatrix = self.buildProjectedTrans()
+    mat = np.identity(4)
+    for i in range(3):
+        mat[:3, i] = projMatrix[:, i]
+        # mat[i, :3] = headingMat[i:i+3]
+    mat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
+
+    mat2 = mat.copy()
+    mat2[1, 3] = 0
+    # print("mat2=", mat2)
+    # print("projMat=", projMatrix)
+    # print("headingMat=", headingMat)
+    # print("mat=", mat)
+
+    invMat = np.linalg.inv(mat2)
+    invMat[:3, :3][invMat[:3, :3] > 1] = 1
+    # print("invMat=", invMat)
+    # rootTransPos = newTransPos
+    # rootTransOrn = newTransOrn
     rootPosRel, dummy = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                  basePos, [0, 0, 0, 1])
     #print("!!!rootPosRel =",rootPosRel )
-    print("rootTransPos=", rootTransPos)
-    print("rootTransOrn=", rootTransOrn)
+    # print("rootTransPos=", rootTransPos)
+    # print("rootTransOrn=", rootTransOrn)
     #print("basePos=",basePos)
+    # print("newTransPos=", newTransPos)
+    # print("newTransOrn=", newTransOrn)
     localPos, localOrn = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                   basePos, baseOrn)
 
@@ -664,26 +763,52 @@ class HumanoidStablePD(object):
     linkIndicesSim = []
     for pbJoint in range(self._pybullet_client.getNumJoints(self._sim_model)):
       linkIndicesSim.append(self.pb2dmJoints[pbJoint])
-      
+
     linkStatesSim = self._pybullet_client.getLinkStates(self._sim_model, linkIndicesSim, computeForwardKinematics=True, computeLinkVelocity=True)
-    
+    # self._pybullet_client.resetBasePositionAndOrientation(self._kin_model2, newTransPos, newTransOrn)
     for pbJoint in range(self._pybullet_client.getNumJoints(self._sim_model)):
       j = self.pb2dmJoints[pbJoint]
-      #print("joint order:",j)
+      # print("joint order:",j)
+      # print("pbJoint=", pbJoint)
       #ls = self._pybullet_client.getLinkState(self._sim_model, j, computeForwardKinematics=True)
       ls = linkStatesSim[pbJoint]
       linkPos = ls[0]
       linkOrn = ls[1]
       linkPosLocal, linkOrnLocal = self._pybullet_client.multiplyTransforms(
           rootTransPos, rootTransOrn, linkPos, linkOrn)
+
+      # state = self._pybullet_client.getLinkState(self._kin_model2, pbJoint)
+      # print("state", self._pybullet_client.getLinkState(self._kin_model2, pbJoint))
       if (linkOrnLocal[3] < 0):
         linkOrnLocal = [-linkOrnLocal[0], -linkOrnLocal[1], -linkOrnLocal[2], -linkOrnLocal[3]]
+      '''self._pybullet_client.resetJointStateMultiDof(self._kin_model2, pbJoint, linkOrnLocal,
+                                                    [0, 0, 0])'''
       linkPosLocal = [
           linkPosLocal[0] - rootPosRel[0], linkPosLocal[1] - rootPosRel[1],
           linkPosLocal[2] - rootPosRel[2]
       ]
-      for l in linkPosLocal:
-        stateVector.append(l)
+      newLinkPosLocal = np.array([linkPosLocal[0], linkPosLocal[1], linkPosLocal[2], 1])
+
+      # print("newLinkPosLocal[:3]=", newLinkPosLocal[:3])
+      # print("newLinkPosLocal1=", j, newLinkPosLocal)
+      new = np.dot(mat, newLinkPosLocal)
+      new = np.dot(np.linalg.inv(mat2), new)
+      linkPosProjectedFrame = list(new[:3])
+      # new = np.dot(mat2, new)
+      # print("new2=", j, new)
+      # print("linkPosLocal, j=", j, linkPosLocal)
+      if self.org_cube and self.test_cube:
+          self._pybullet_client.resetBasePositionAndOrientation(self.org_cube[j], linkPosLocal, [0, 0, 0, 1])
+          self._pybullet_client.resetBasePositionAndOrientation(self.test_cube[j], new[:3], [0, 0, 0, 1])
+      if self.projectedFrame:
+          # print("projected frame")
+          for l in linkPosProjectedFrame:
+
+              stateVector.append(l)
+      else:
+          # print("root frame")
+          for l in linkPosLocal:
+            stateVector.append(l)
       #re-order the quaternion, DeepMimic uses w,x,y,z
 
       if (linkOrnLocal[3] < 0):
@@ -697,12 +822,12 @@ class HumanoidStablePD(object):
       stateVector.append(linkOrnLocal[1])
       stateVector.append(linkOrnLocal[2])
 
-       
+
     for pbJoint in range(self._pybullet_client.getNumJoints(self._sim_model)):
       j = self.pb2dmJoints[pbJoint]
       #ls = self._pybullet_client.getLinkState(self._sim_model, j, computeLinkVelocity=True)
       ls = linkStatesSim[pbJoint]
-      
+
       linkLinVel = ls[6]
       linkAngVel = ls[7]
       linkLinVelLocal, unused = self._pybullet_client.multiplyTransforms([0, 0, 0], rootTransOrn,
@@ -842,7 +967,7 @@ class HumanoidStablePD(object):
     rootPosKin, rootOrnKin = self._pybullet_client.getBasePositionAndOrientation(self._kin_model)
     linVelSim, angVelSim = self._pybullet_client.getBaseVelocity(self._sim_model)
     #don't read the velocities from the kinematic model (they are zero), use the pose interpolator velocity
-    #see also issue https://github.com/bulletphysics/bullet3/issues/2401 
+    #see also issue https://github.com/bulletphysics/bullet3/issues/2401
     linVelKin = self._poseInterpolator._baseLinVel
     angVelKin = self._poseInterpolator._baseAngVel
 
@@ -859,7 +984,7 @@ class HumanoidStablePD(object):
     vel_err += root_rot_w * root_ang_vel_err
 
     useArray = True
-    
+
     if useArray:
       jointIndices = range(num_joints)
       simJointStates = self._pybullet_client.getJointStatesMultiDof(self._sim_model, jointIndices)
@@ -904,7 +1029,7 @@ class HumanoidStablePD(object):
       vel_err += w * curr_vel_err
 
       is_end_eff = j in self._end_effectors
-      
+
       if is_end_eff:
 
         if useArray:
@@ -968,7 +1093,7 @@ class HumanoidStablePD(object):
     #print("end_eff_reward=",end_eff_reward)
     #print("root_reward=",root_reward)
     #print("com_reward=",com_reward)
-    
+
     info_rew = dict(
       pose_reward=pose_reward,
       vel_reward=vel_reward,
@@ -976,7 +1101,7 @@ class HumanoidStablePD(object):
       root_reward=root_reward,
       com_reward=com_reward
     )
-    
+
     info_errs = dict(
       pose_err=pose_err,
       vel_err=vel_err,
@@ -984,7 +1109,7 @@ class HumanoidStablePD(object):
       root_err=root_err,
       com_err=com_err
     )
-    
+
     return reward
 
   def computeCOMposVel(self, uid: int):
@@ -1005,3 +1130,33 @@ class HumanoidStablePD(object):
     com_pos = np.sum(masses * link_pos, axis=0) / tot_mass
     com_vel = np.sum(masses * link_vel, axis=0) / tot_mass
     return com_pos, com_vel
+
+
+def matrixToQuarternion(m):
+    tr = m[0][0] + m[1][1] + m[2][2]
+    if tr > 0:
+        S = np.sqrt(tr + 1) * 2
+        qw = 0.25 * S
+        qx = (m[2][1] - m[1][2]) / S
+        qy = (m[0][2] - m[2][0]) / S
+        qz = (m[1][0] - m[0][1]) / S
+    elif m[0][0] > m[1][1] and m[0][0] > m[2][2]:
+        S = np.sqrt(1 + m[0][0] - m[1][1] - m[2][2])
+        qw = (m[2][1] - m[1][2]) / S
+        qx = 0.25 * S
+        qy = (m[0][1] + m[1][0]) / S
+        qz = (m[0][2] + m[2][0]) / S
+    elif m[1][1] > m[2][2]:
+        S = np.sqrt(1.0 + m[1][1] - m[0][0] - m[2][2]) * 2
+        qw = (m[0][2] - m[2][0]) / S
+        qx = (m[0][1] + m[1][0]) / S
+        qy = 0.25 * S
+        qz = (m[1][2] + m[2][1]) / S
+    else:
+        S = np.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) * 2
+        qw = (m[1][0] - m[0][1]) / S
+        qx = (m[0][2] + m[2][0]) / S
+        qy = (m[1][2] + m[2][1]) / S
+        qz = 0.25 * S
+
+    return (qx, qy, qz, qw)

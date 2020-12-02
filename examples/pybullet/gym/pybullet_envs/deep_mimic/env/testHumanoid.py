@@ -64,7 +64,7 @@ while (1):
 
     singleStep = False
     #t = pybullet_client.readUserDebugParameter(timeId)
-    print("t=",t)
+    # print("t=",t)
     for i in range(1):
 
       #print("t=", t)
@@ -82,7 +82,7 @@ while (1):
       #curPose.reset()
       
       s = humanoid.getState()
-      print(s)
+      # print(s)
       #np.savetxt("pb_record_state_s.csv", s, delimiter=",")
       maxForces = [
           0, 0, 0, 0, 0, 0, 0, 200, 200, 200, 200, 50, 50, 50, 50, 200, 200, 200, 200, 150, 90, 90,
