@@ -25,6 +25,7 @@ class HumanoidStablePD(object):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
+    self.mode = 'a'
     print("LOADING humanoid!")
     flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER+self._pybullet_client.URDF_USE_SELF_COLLISION+self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
     self._sim_model = self._pybullet_client.loadURDF(
@@ -38,11 +39,26 @@ class HumanoidStablePD(object):
     #  self._pybullet_client.setCollisionFilterGroupMask(self._sim_model,j,collisionFilterGroup=0,collisionFilterMask=0)
 
     self._end_effectors = [5, 8, 11, 14]  #ankle and wrist, both left and right
-    test = False
+    self.test = True
     self.test_cube = None
     self.org_cube = None
     self.projectedFrame = True
-    if test:
+
+    if self.test:
+        # self.frame = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(3)]
+        self.x_cube = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(5)]
+        self.y_cube = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(5)]
+        self.z_cube = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(5)]
+        for i in range(5):
+            self._pybullet_client.setCollisionFilterGroupMask(self.x_cube[i], -1,
+                                                              collisionFilterGroup=0,
+                                                              collisionFilterMask=0)
+            self._pybullet_client.setCollisionFilterGroupMask(self.y_cube[i], -1,
+                                                              collisionFilterGroup=0,
+                                                              collisionFilterMask=0)
+            self._pybullet_client.setCollisionFilterGroupMask(self.z_cube[i], -1,
+                                                              collisionFilterGroup=0,
+                                                              collisionFilterMask=0)
         self.test_cube = [self._pybullet_client.loadURDF("cube_small.urdf") for i in range(15)]
         self.org_cube = [self._pybullet_client.loadURDF("cube_small.urdf") for i in range(15)]
     self._kin_model = self._pybullet_client.loadURDF(
@@ -720,25 +736,46 @@ class HumanoidStablePD(object):
     rootTransPos, rootTransOrn, headingMat = self.buildOriginTrans()
     basePos, baseOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
     # print("basePos", basePos)
+
     newTransPos, newTransOrn, projMatrix = self.buildProjectedTrans()
+
+
+    # self.renderFrame(baseMat)
     mat = np.identity(4)
     for i in range(3):
         mat[:3, i] = projMatrix[:, i]
-        # mat[i, :3] = headingMat[i:i+3]
+        # mat[i, :3] = headingMat[i:i + 3]
+    # print("projMat=", headingMat)
     mat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
 
-    mat2 = mat.copy()
-    mat2[1, 3] = 0
-    # print("mat2=", mat2)
-    # print("projMat=", projMatrix)
-    # print("headingMat=", headingMat)
-    # print("mat=", mat)
+    if self.mode == 'a':
+        print("root attached frame")
+        baseMat = np.identity(4)
 
-    invMat = np.linalg.inv(mat2)
-    invMat[:3, :3][invMat[:3, :3] > 1] = 1
+        base_mat = self._pybullet_client.getMatrixFromQuaternion(baseOrn)
+        print("base_mat=", base_mat)
+        for i in range(3):
+            baseMat[i, :3] = base_mat[3 * i: 3 * i + 3]
+        print("baseMat=", baseMat)
+        baseMat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
+        invMat = np.linalg.inv(baseMat)
+    elif self.mode == 'b':
+        pass
+    else :
+
+        mat2 = mat.copy()
+        mat2[1, 3] = 0
+        # print("mat2=", mat2)
+        # print("projMat=", projMatrix)
+        # print("headingMat=", headingMat)
+        # print("mat=", mat)
+        # self.renderFrame(mat)
+        invMat = np.linalg.inv(mat2)
+    # invMat[:3, :3][invMat[:3, :3] > 1] = 1
     # print("invMat=", invMat)
     # rootTransPos = newTransPos
     # rootTransOrn = newTransOrn
+    self.renderFrame(baseMat)
     rootPosRel, dummy = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                  basePos, [0, 0, 0, 1])
     #print("!!!rootPosRel =",rootPosRel )
@@ -791,22 +828,40 @@ class HumanoidStablePD(object):
 
       # print("newLinkPosLocal[:3]=", newLinkPosLocal[:3])
       # print("newLinkPosLocal1=", j, newLinkPosLocal)
-      new = np.dot(mat, newLinkPosLocal)
-      new = np.dot(np.linalg.inv(mat2), new)
-      linkPosProjectedFrame = list(new[:3])
+      '''
+      mat - root frame -> global frame transform
+      mat2 - projected root frame -> global transform
+      mat * linkPosLocal -> global에 표현된 link pos
+      '''
+
       # new = np.dot(mat2, new)
       # print("new2=", j, new)
       # print("linkPosLocal, j=", j, linkPosLocal)
-      if self.org_cube and self.test_cube:
-          self._pybullet_client.resetBasePositionAndOrientation(self.org_cube[j], linkPosLocal, [0, 0, 0, 1])
-          self._pybullet_client.resetBasePositionAndOrientation(self.test_cube[j], new[:3], [0, 0, 0, 1])
+      if self.test:
+          new = np.dot(mat, newLinkPosLocal)
+          '''
+          print("base's inv mat", np.linalg.inv(baseMat))
+          print("inv test", np.dot(baseMat, np.linalg.inv(baseMat)))'''
+          new = np.dot(np.linalg.inv(baseMat), new)
+          linkPosProjectedFrame = list(new[:3])
+          print("mat=", mat)
+          '''for i in range(3):
+            q = self._pybullet_client.getQuaternionFromEuler(mat2[:3, i] * math.pi / 2)
+            self._pybullet_client.resetBasePositionAndOrientation(self.frame[i], [0, 0, 0], q)'''
+          if self.org_cube and self.test_cube:
+              self._pybullet_client.resetBasePositionAndOrientation(self.org_cube[j], linkPosLocal, [0, 0, 0, 1])
+              self._pybullet_client.resetBasePositionAndOrientation(self.test_cube[j], new[:3], [0, 0, 0, 1])
+
       if self.projectedFrame:
           # print("projected frame")
+          new = np.dot(mat, newLinkPosLocal)
+          new = np.dot(invMat, new)
+          linkPosProjectedFrame = list(new[:3])
           for l in linkPosProjectedFrame:
 
               stateVector.append(l)
       else:
-          # print("root frame")
+          # print("horizontally aligned ")
           for l in linkPosLocal:
             stateVector.append(l)
       #re-order the quaternion, DeepMimic uses w,x,y,z
@@ -1112,6 +1167,24 @@ class HumanoidStablePD(object):
 
     return reward
 
+  def renderFrame(self, frame):
+      '''
+      :param frame: 4X4 matrix
+      :return: rendering frame
+      '''
+      startPos = frame[:3, 3]
+      x = frame[:3, 0]
+      y = frame[:3, 1]
+      z = frame[:3, 2]
+      print("startPos=", startPos)
+      print("x=", x)
+      print("y=", y)
+      print("z=", z)
+      for i in range(5):
+          # time.sleep(1)
+          self._pybullet_client.resetBasePositionAndOrientation(self.x_cube[i], startPos + 0.1 * i * x, [0, 0, 0, 1])
+          self._pybullet_client.resetBasePositionAndOrientation(self.y_cube[i], startPos + 0.1 * i * y, [0, 0, 0, 1])
+          self._pybullet_client.resetBasePositionAndOrientation(self.z_cube[i], startPos + 0.1 * i * z, [0, 0, 0, 1])
   def computeCOMposVel(self, uid: int):
     """Compute center-of-mass position and velocity."""
     pb = self._pybullet_client

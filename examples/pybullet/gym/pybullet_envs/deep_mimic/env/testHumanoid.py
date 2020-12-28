@@ -16,7 +16,7 @@ z2y = pybullet_client.getQuaternionFromEuler([-math.pi * 0.5, 0, 0])
 planeId = pybullet_client.loadURDF("plane_implicit.urdf", [0, 0, 0],
                                    z2y,
                                    useMaximalCoordinates=True)
-pybullet_client.changeDynamics(planeId, linkIndex=-1, lateralFriction=0.9)
+# pybullet_client.changeDynamics(planeId, linkIndex=-1, lateralFriction=0.9)
 #print("planeId=",planeId)
 
 pybullet_client.configureDebugVisualizer(pybullet_client.COV_ENABLE_Y_AXIS_UP, 1)
