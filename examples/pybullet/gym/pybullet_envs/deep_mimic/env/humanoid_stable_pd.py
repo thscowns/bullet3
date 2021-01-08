@@ -25,7 +25,7 @@ class HumanoidStablePD(object):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
-    self.mode = 'a'
+    self.mode = 'c'
     print("LOADING humanoid!")
     flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER+self._pybullet_client.URDF_USE_SELF_COLLISION+self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
     self._sim_model = self._pybullet_client.loadURDF(
@@ -776,7 +776,8 @@ class HumanoidStablePD(object):
     # rootTransPos = newTransPos
     # rootTransOrn = newTransOrn
     if self.test:
-        self.renderFrame(baseMat)
+        pass
+        # self.renderFrame(baseMat)
     rootPosRel, dummy = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                  basePos, [0, 0, 0, 1])
     #print("!!!rootPosRel =",rootPosRel )
@@ -843,7 +844,7 @@ class HumanoidStablePD(object):
           '''
           print("base's inv mat", np.linalg.inv(baseMat))
           print("inv test", np.dot(baseMat, np.linalg.inv(baseMat)))'''
-          new = np.dot(np.linalg.inv(baseMat), new)
+          new = np.dot(invMat, new)
           linkPosProjectedFrame = list(new[:3])
           print("mat=", mat)
           '''for i in range(3):
