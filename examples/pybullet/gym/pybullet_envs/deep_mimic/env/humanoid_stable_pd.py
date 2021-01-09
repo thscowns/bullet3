@@ -25,7 +25,7 @@ class HumanoidStablePD(object):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
-    self.mode = 'c'
+    self.mode = 'b'
     print("LOADING humanoid!")
     flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER+self._pybullet_client.URDF_USE_SELF_COLLISION+self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
     self._sim_model = self._pybullet_client.loadURDF(
@@ -42,7 +42,7 @@ class HumanoidStablePD(object):
     self.test = False
     self.test_cube = None
     self.org_cube = None
-    self.projectedFrame = True
+    self.projectedFrame = False
 
     if self.test:
         # self.frame = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(3)]
@@ -760,6 +760,7 @@ class HumanoidStablePD(object):
         baseMat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
         invMat = np.linalg.inv(baseMat)
     elif self.mode == 'b':
+        print("b")
         pass
     else :
 
