@@ -760,7 +760,7 @@ class HumanoidStablePD(object):
         baseMat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
         invMat = np.linalg.inv(baseMat)
     elif self.mode == 'b':
-        print("b")
+        # print("b")
         pass
     else :
 
