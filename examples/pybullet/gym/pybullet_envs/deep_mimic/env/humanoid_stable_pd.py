@@ -1,4 +1,4 @@
-from pybullet_utils import pd_controller_stable
+from pybullet_utils import pd_controller_stable, util
 from pybullet_envs.deep_mimic.env import humanoid_pose_interpolator
 import math
 import numpy as np
@@ -25,7 +25,7 @@ class HumanoidStablePD(object):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
-    self.mode = 'b'
+    self.mode = 'c'
     print("LOADING humanoid!")
     flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER+self._pybullet_client.URDF_USE_SELF_COLLISION+self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
     self._sim_model = self._pybullet_client.loadURDF(
@@ -749,6 +749,10 @@ class HumanoidStablePD(object):
     mat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
 
     if self.mode == 'a':
+        '''
+        attached frame
+        '''
+
         # print("root attached frame")
         baseMat = np.identity(4)
 
@@ -758,12 +762,20 @@ class HumanoidStablePD(object):
             baseMat[i, :3] = base_mat[3 * i: 3 * i + 3]
         # print("baseMat=", baseMat)
         baseMat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
-        invMat = np.linalg.inv(baseMat)
+        # invMat = np.linalg.inv(baseMat)
+        # print("np linalg inv =", invMat)
+        invMat = util.make_invmat(baseMat)
+        # print("fast inv", invMat2)
     elif self.mode == 'b':
-        # print("b")
+        '''
+        aligned frame
+        '''
+        print("b")
         pass
     else :
-
+        '''
+        projected frame
+        '''
         mat2 = mat.copy()
         mat2[1, 3] = 0
         # print("mat2=", mat2)
@@ -771,7 +783,8 @@ class HumanoidStablePD(object):
         # print("headingMat=", headingMat)
         # print("mat=", mat)
         # self.renderFrame(mat)
-        invMat = np.linalg.inv(mat2)
+        # invMat = np.linalg.inv(mat2)
+        invMat = util.make_invmat(mat2)
     # invMat[:3, :3][invMat[:3, :3] > 1] = 1
     # print("invMat=", invMat)
     # rootTransPos = newTransPos
