@@ -21,7 +21,10 @@ def run():
   global update_timestep
   global world
   done = False
-  while not (done):
+  t = 0
+  while t < 6e7:
+    # Logger.print2(t)
+    t += 1
     update_world(world, update_timestep)
 
   return
