@@ -25,7 +25,7 @@ class HumanoidStablePD(object):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
-    self.mode = 'a'
+    self.mode = 'b'
     print("LOADING humanoid!")
     flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER+self._pybullet_client.URDF_USE_SELF_COLLISION+self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
     self._sim_model = self._pybullet_client.loadURDF(
@@ -39,10 +39,10 @@ class HumanoidStablePD(object):
     #  self._pybullet_client.setCollisionFilterGroupMask(self._sim_model,j,collisionFilterGroup=0,collisionFilterMask=0)
 
     self._end_effectors = [5, 8, 11, 14]  #ankle and wrist, both left and right
-    self.test = True
+    self.test = False
     self.test_cube = None
     self.org_cube = None
-    self.projectedFrame = True
+    self.projectedFrame = False
 
     if self.test:
         # self.frame = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(3)]
@@ -749,17 +749,18 @@ class HumanoidStablePD(object):
     mat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
 
     if self.mode == 'a':
-        print("root attached frame")
+        # print("root attached frame")
         baseMat = np.identity(4)
 
         base_mat = self._pybullet_client.getMatrixFromQuaternion(baseOrn)
-        print("base_mat=", base_mat)
+        # print("base_mat=", base_mat)
         for i in range(3):
             baseMat[i, :3] = base_mat[3 * i: 3 * i + 3]
-        print("baseMat=", baseMat)
+        # print("baseMat=", baseMat)
         baseMat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
         invMat = np.linalg.inv(baseMat)
     elif self.mode == 'b':
+        # print("b")
         pass
     else :
 
@@ -775,7 +776,9 @@ class HumanoidStablePD(object):
     # print("invMat=", invMat)
     # rootTransPos = newTransPos
     # rootTransOrn = newTransOrn
-    self.renderFrame(baseMat)
+    if self.test:
+        pass
+        # self.renderFrame(baseMat)
     rootPosRel, dummy = self._pybullet_client.multiplyTransforms(rootTransPos, rootTransOrn,
                                                                  basePos, [0, 0, 0, 1])
     #print("!!!rootPosRel =",rootPosRel )
@@ -842,7 +845,7 @@ class HumanoidStablePD(object):
           '''
           print("base's inv mat", np.linalg.inv(baseMat))
           print("inv test", np.dot(baseMat, np.linalg.inv(baseMat)))'''
-          new = np.dot(np.linalg.inv(baseMat), new)
+          new = np.dot(invMat, new)
           linkPosProjectedFrame = list(new[:3])
           print("mat=", mat)
           '''for i in range(3):
