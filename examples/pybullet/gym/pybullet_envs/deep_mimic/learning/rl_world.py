@@ -52,6 +52,22 @@ class RLWorld(object):
     self.env.shutdown()
     return
 
+  def load_agents(self, path, i):
+    self.agents = []
+    agent_files = self.arg_parser.parse_strings('agent_files')
+    print("len(agent_files)=", len(agent_files))
+    curr_file = agent_files[0]
+    curr_agent = self._build_agent(0, curr_file)
+    if curr_agent is not None:
+      Logger.print2(str(curr_agent))
+      curr_model_file = "agent0_int_model_" + '{0:010d}'.format(i) + ".ckpt"
+      print(pybullet_data.getDataPath())
+      print(curr_model_file)
+      if curr_model_file != 'none':
+        curr_agent.load_model(path + "intermediate/agent0_models/" + curr_model_file)
+    self.agents.append(curr_agent)
+    # assert (len(agent_files) == num_agents or len(agent_files) == 0)
+
   def build_agents(self):
     num_agents = self.env.get_num_agents()
     print("num_agents=", num_agents)
@@ -81,6 +97,7 @@ class RLWorld(object):
 
         if (len(model_files) > 0):
           curr_model_file = model_files[i]
+          print("curr_model_file=", curr_model_file)
           if curr_model_file != 'none':
             curr_agent.load_model(pybullet_data.getDataPath() + "/" + curr_model_file)
 
