@@ -21,11 +21,11 @@ jointFrictionForce = 0
 class HumanoidStablePD(object):
 
   def __init__( self, pybullet_client, mocap_data, timeStep,
-                useFixedBase=True, arg_parser=None, useComReward=False):
+                useFixedBase=True, arg_parser=None, useComReward=False, mode='b'):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
-    self.mode = 'c'
+    self.mode = mode
     print("LOADING humanoid!")
     flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER+self._pybullet_client.URDF_USE_SELF_COLLISION+self._pybullet_client.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
     self._sim_model = self._pybullet_client.loadURDF(
@@ -42,7 +42,7 @@ class HumanoidStablePD(object):
     self.test = False
     self.test_cube = None
     self.org_cube = None
-    self.projectedFrame = False
+    # self.projectedFrame = False
 
     if self.test:
         # self.frame = [self._pybullet_client.loadURDF("cube_rotate.urdf") for i in range(3)]
@@ -66,11 +66,6 @@ class HumanoidStablePD(object):
         globalScaling=0.25,
         useFixedBase=True,
         flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER)
-    '''self._kin_model2 = self._pybullet_client.loadURDF(
-        "humanoid/humanoid.urdf", [0, 0.85, 0],
-        globalScaling=0.25,
-        useFixedBase=True,
-        flags=self._pybullet_client.URDF_MAINTAIN_LINK_ORDER)'''
 
     self._pybullet_client.changeDynamics(self._sim_model, -1, lateralFriction=0.9)
     for j in range(self._pybullet_client.getNumJoints(self._sim_model)):
@@ -85,22 +80,12 @@ class HumanoidStablePD(object):
                                                       -1,
                                                       collisionFilterGroup=0,
                                                       collisionFilterMask=0)
-    '''self._pybullet_client.setCollisionFilterGroupMask(self._kin_model2,
-                                                      -1,
-                                                      collisionFilterGroup=0,
-                                                      collisionFilterMask=0)'''
     self._pybullet_client.changeDynamics(
         self._kin_model,
         -1,
         activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
         self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
         self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
-    '''self._pybullet_client.changeDynamics(
-        self._kin_model2,
-        -1,
-        activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
-                        self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
-                        self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)'''
     alpha = 0.4
     self._pybullet_client.changeVisualShape(self._kin_model, -1, rgbaColor=[1, 1, 1, alpha])
     if self.org_cube and self.test_cube:
@@ -120,18 +105,6 @@ class HumanoidStablePD(object):
           self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
           self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
       self._pybullet_client.changeVisualShape(self._kin_model, j, rgbaColor=[1, 1, 1, alpha])
-    '''for j in range(self._pybullet_client.getNumJoints(self._kin_model2)):
-      self._pybullet_client.setCollisionFilterGroupMask(self._kin_model2,
-                                                        j,
-                                                        collisionFilterGroup=0,
-                                                        collisionFilterMask=0)
-      self._pybullet_client.changeDynamics(
-          self._kin_model2,
-          j,
-          activationState=self._pybullet_client.ACTIVATION_STATE_SLEEP +
-          self._pybullet_client.ACTIVATION_STATE_ENABLE_SLEEPING +
-          self._pybullet_client.ACTIVATION_STATE_DISABLE_WAKEUP)
-      self._pybullet_client.changeVisualShape(self._kin_model2, j, rgbaColor=[0, 0, 0, alpha])'''
 
     self._poseInterpolator = humanoid_pose_interpolator.HumanoidPoseInterpolator()
 
@@ -189,23 +162,6 @@ class HumanoidStablePD(object):
           positionGain=0,
           velocityGain=1,
           force=[jointFrictionForce, jointFrictionForce, 0])
-      '''self._pybullet_client.setJointMotorControl2(self._kin_model2,
-                                                  j,
-                                                  self._pybullet_client.POSITION_CONTROL,
-                                                  targetPosition=0,
-                                                  positionGain=0,
-                                                  targetVelocity=0,
-                                                  force=0)
-      self._pybullet_client.setJointMotorControlMultiDof(
-          self._kin_model2,
-          j,
-          self._pybullet_client.POSITION_CONTROL,
-          targetPosition=[0, 0, 0, 1],
-          targetVelocity=[0, 0, 0],
-          positionGain=0,
-          velocityGain=1,
-          force=[jointFrictionForce, jointFrictionForce, 0])'''
-
     self._jointDofCounts = [4, 4, 4, 1, 4, 4, 1, 4, 1, 4, 4, 1]
 
     #only those body parts/links are allowed to touch the ground, otherwise the episode terminates
@@ -223,6 +179,9 @@ class HumanoidStablePD(object):
     self._useComReward = useComReward
 
     self.resetPose()
+
+  def set_mode(self, mode):
+      self.mode = mode
 
   def resetPose(self):
     #print("resetPose with self._frame=", self._frame, " and self._frameFraction=",self._frameFraction)
@@ -744,7 +703,7 @@ class HumanoidStablePD(object):
     mat = np.identity(4)
     for i in range(3):
         mat[:3, i] = projMatrix[:, i]
-        # mat[i, :3] = headingMat[i:i + 3]
+
     # print("projMat=", headingMat)
     mat[:3, 3] = np.array([basePos[0], basePos[1], basePos[2]])
 
@@ -770,12 +729,13 @@ class HumanoidStablePD(object):
         '''
         aligned frame
         '''
-        print("b")
+        # print("b")
         pass
     else :
         '''
         projected frame
         '''
+        # print("projected_frame")
         mat2 = mat.copy()
         mat2[1, 3] = 0
         # print("mat2=", mat2)
@@ -860,7 +820,7 @@ class HumanoidStablePD(object):
           print("inv test", np.dot(baseMat, np.linalg.inv(baseMat)))'''
           new = np.dot(invMat, new)
           linkPosProjectedFrame = list(new[:3])
-          print("mat=", mat)
+          # print("mat=", mat)
           '''for i in range(3):
             q = self._pybullet_client.getQuaternionFromEuler(mat2[:3, i] * math.pi / 2)
             self._pybullet_client.resetBasePositionAndOrientation(self.frame[i], [0, 0, 0], q)'''
@@ -868,18 +828,18 @@ class HumanoidStablePD(object):
               self._pybullet_client.resetBasePositionAndOrientation(self.org_cube[j], linkPosLocal, [0, 0, 0, 1])
               self._pybullet_client.resetBasePositionAndOrientation(self.test_cube[j], new[:3], [0, 0, 0, 1])
 
-      if self.projectedFrame:
-          # print("projected frame")
+      if self.mode == 'b':
+          # print("horizontally aligned ")
+          for l in linkPosLocal:
+              stateVector.append(l)
+
+      else:
+          # print("projected frame, attached")
           new = np.dot(mat, newLinkPosLocal)
           new = np.dot(invMat, new)
           linkPosProjectedFrame = list(new[:3])
           for l in linkPosProjectedFrame:
-
               stateVector.append(l)
-      else:
-          # print("horizontally aligned ")
-          for l in linkPosLocal:
-            stateVector.append(l)
       #re-order the quaternion, DeepMimic uses w,x,y,z
 
       if (linkOrnLocal[3] < 0):
@@ -915,6 +875,7 @@ class HumanoidStablePD(object):
     #print("stateVector len=",len(stateVector))
     #for st in range (len(stateVector)):
     #  print("state[",st,"]=",stateVector[st])
+
     return stateVector
 
   def terminates(self):

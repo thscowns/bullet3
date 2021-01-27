@@ -29,13 +29,14 @@ def update_world(world, time_elapsed):
   global total_reward
   total_reward += reward
   global steps
+
   steps+=1
   
   #print("reward=",reward)
   #print("steps=",steps)
   end_episode = world.env.is_episode_end()
   if (end_episode or steps>= 1000):
-    # print("total_reward=",total_reward)
+    # print("total_reward=", total_reward)
     total_reward=0
     steps = 0
     world.end_episode()
@@ -49,7 +50,7 @@ def build_arg_parser(args):
 
   arg_file = arg_parser.parse_string('arg_file', '')
   if arg_file == '':
-    arg_file = "run_humanoid3d_backflip_args.txt"
+    arg_file = "run_humanoid3d_walk_args.txt"
   if (arg_file != ''):
     path = pybullet_data.getDataPath() + "/args/" + arg_file
     succ = arg_parser.load_file(path)
@@ -61,14 +62,17 @@ def build_arg_parser(args):
 args = sys.argv[1:]
 
 
-def build_world(args, enable_draw):
+def build_world(args, enable_draw, op='b'):
   arg_parser = build_arg_parser(args)
+  mode = arg_parser.parse_string('mode')
+  print("mode", mode)
   print("enable_draw=", enable_draw)
-  env = PyBulletDeepMimicEnv(arg_parser, enable_draw)
+  env = PyBulletDeepMimicEnv(arg_parser, enable_draw, mode=mode)
   world = RLWorld(env, arg_parser)
   #world.env.set_playback_speed(playback_speed)
 
   motion_file = arg_parser.parse_string("motion_file")
+
   print("motion_file=", motion_file)
   bodies = arg_parser.parse_ints("fall_contact_bodies")
   print("bodies=", bodies)
@@ -94,7 +98,10 @@ def build_world(args, enable_draw):
 
 if __name__ == '__main__':
 
-  world = build_world(args, True)
+  world = build_world(args, True, op='c')
+  # path = "/home/thscowns/deepmimic_output/without_boundloss/backflip/projected_frame/"
+  path = "/home/thscowns/deepmimic_output/train_bound_loss/walk/projected_frame/"
+  world.load_agents(path, 14000)
   while (world.env._pybullet_client.isConnected()):
 
     timeStep = update_timestep
