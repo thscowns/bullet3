@@ -57,6 +57,7 @@ class RLWorld(object):
     agent_files = self.arg_parser.parse_strings('agent_files')
     print("len(agent_files)=", len(agent_files))
     curr_file = agent_files[0]
+    print("curr_file=", curr_file)
     curr_agent = self._build_agent(0, curr_file)
     if curr_agent is not None:
       Logger.print2(str(curr_agent))
@@ -65,6 +66,7 @@ class RLWorld(object):
       print(curr_model_file)
       if curr_model_file != 'none':
         curr_agent.load_model(path + "intermediate/agent0_models/" + curr_model_file)
+    curr_agent.set_enable_training(False)
     self.agents.append(curr_agent)
     # assert (len(agent_files) == num_agents or len(agent_files) == 0)
 

@@ -21,24 +21,28 @@ animating = True
 step = False
 total_reward = 0
 steps = 0
-
+p = 0
 def update_world(world, time_elapsed):
   timeStep = update_timestep
   world.update(timeStep)
   reward = world.env.calc_reward(agent_id=0)
+
   global total_reward
-  total_reward += reward
+  global p
+  if p % 8 ==0:
+    total_reward += reward
   global steps
 
   steps+=1
-  
+  p += 1
   #print("reward=",reward)
   #print("steps=",steps)
   end_episode = world.env.is_episode_end()
   if (end_episode or steps>= 1000):
-    # print("total_reward=", total_reward)
+    print("total_reward=", total_reward)
     total_reward=0
     steps = 0
+    p = 0
     world.end_episode()
     world.reset()
   return
@@ -98,10 +102,11 @@ def build_world(args, enable_draw, op='b'):
 
 if __name__ == '__main__':
 
-  world = build_world(args, True, op='c')
+  world = build_world(args, True, op='b')
   # path = "/home/thscowns/deepmimic_output/without_boundloss/backflip/projected_frame/"
-  path = "/home/thscowns/deepmimic_output/train_bound_loss/walk/projected_frame/"
-  world.load_agents(path, 14000)
+  # path = "/home/thscowns/deepmimic_output/train_129/walk/attached_frame/"
+  path = "/home/thscowns/orbullet3/bullet3/examples/pybullet/gym/pybullet_data/data/policies/walk/output/"
+  world.load_agents(path, 13200)
   while (world.env._pybullet_client.isConnected()):
 
     timeStep = update_timestep

@@ -21,7 +21,7 @@ jointFrictionForce = 0
 class HumanoidStablePD(object):
 
   def __init__( self, pybullet_client, mocap_data, timeStep,
-                useFixedBase=True, arg_parser=None, useComReward=False, mode='b'):
+                useFixedBase=True, arg_parser=None, useComReward=False, mode='c'):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
@@ -663,7 +663,7 @@ class HumanoidStablePD(object):
     rootPos, rootOrn = self._pybullet_client.getBasePositionAndOrientation(self._sim_model)
 
     # print("rootPos=",rootPos, " rootOrn=",rootOrn)
-    invRootPos = [-rootPos[0], -rootPos[1], -rootPos[2]]
+    invRootPos = [-rootPos[0], 0, -rootPos[2]]
     #invOrigTransPos, invOrigTransOrn = self._pybullet_client.invertTransform(rootPos,rootOrn)
     headingOrn = self.buildHeadingTrans(rootOrn)
     # headingOrn = self.buildProjectedTrans(rootOrn)
@@ -832,6 +832,7 @@ class HumanoidStablePD(object):
           # print("horizontally aligned ")
           for l in linkPosLocal:
               stateVector.append(l)
+              # print(l)
 
       else:
           # print("projected frame, attached")
