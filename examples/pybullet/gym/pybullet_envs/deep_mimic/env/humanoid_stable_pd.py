@@ -21,7 +21,7 @@ jointFrictionForce = 0
 class HumanoidStablePD(object):
 
   def __init__( self, pybullet_client, mocap_data, timeStep,
-                useFixedBase=True, arg_parser=None, useComReward=False, mode='c'):
+                useFixedBase=True, arg_parser=None, useComReward=False, mode='d'):
     self._pybullet_client = pybullet_client
     self._mocap_data = mocap_data
     self._arg_parser = arg_parser
@@ -729,9 +729,9 @@ class HumanoidStablePD(object):
         '''
         aligned frame
         '''
-        # print("b")
+        # print("aligned_frame")
         pass
-    else :
+    elif self.mode == 'c':
         '''
         projected frame
         '''
@@ -745,6 +745,19 @@ class HumanoidStablePD(object):
         # self.renderFrame(mat)
         # invMat = np.linalg.inv(mat2)
         invMat = util.make_invmat(mat2)
+    elif self.mode == 'd':
+        # print("projected attached frame")
+        baseMat = np.identity(4)
+
+        base_mat = self._pybullet_client.getMatrixFromQuaternion(baseOrn)
+        # print("base_mat=", base_mat)
+        for i in range(3):
+            baseMat[i, :3] = base_mat[3 * i: 3 * i + 3]
+        # print("baseMat=", baseMat)
+        baseMat[:3, 3] = np.array([basePos[0], 0, basePos[2]])
+        # invMat = np.linalg.inv(baseMat)
+        # print("np linalg inv =", invMat)
+        invMat = util.make_invmat(baseMat)
     # invMat[:3, :3][invMat[:3, :3] > 1] = 1
     # print("invMat=", invMat)
     # rootTransPos = newTransPos
